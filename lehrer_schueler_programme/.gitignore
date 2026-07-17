@@ -8,6 +8,6 @@ dist/
 .venv/
 env/
 venv/
-secret_updater.py
+
 historie.json
 einstellungen.json

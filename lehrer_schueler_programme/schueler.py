@@ -257,8 +257,4 @@ if __name__ == '__main__':
 
 APP_VERSION = '1.0.0'
 
-try:
-    import secret_updater
-    secret_updater.start_updater("schueler", APP_VERSION)
-except ImportError:
-    pass
+
